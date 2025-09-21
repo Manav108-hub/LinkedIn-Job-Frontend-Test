@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Agent AI - Automated Job Applications</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #4c51bf;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .auth-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .oauth-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .linkedin-btn {
+            background: #0077b5;
+            color: white;
+        }
+
+        .linkedin-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+
+        .google-btn {
+            background: #dc4e41;
+            color: white;
+        }
+
+        .google-btn:hover {
+            background: #b23121;
+            transform: translateY(-2px);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .connected {
+            background: #10b981;
+        }
+
+        .disconnected {
+            background: #ef4444;
+        }
+
+        /* Telegram Setup Modal */
+        .telegram-setup-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .telegram-setup-content {
+            background: white;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .telegram-setup-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+            text-align: center;
+        }
+
+        .telegram-setup-body {
+            padding: 25px;
+        }
+
+        .setup-step {
+            margin-bottom: 20px;
+        }
+
+        .setup-step h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .setup-step ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .setup-step li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .code-snippet {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #2d3748;
+            display: inline-block;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .setup-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-auto-detect {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .btn-auto-detect:hover {
+            background: #38a169;
+        }
+
+        .btn-manual-setup {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .btn-manual-setup:hover {
+            background: #5a67d8;
+        }
+
+        .btn-cancel {
+            background: #a0aec0;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background: #718096;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-message .emoji {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .success-message h3 {
+            color: #48bb78;
+            margin-bottom: 15px;
+        }
+
+        .success-message p {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* Automation Section */
+        .automation-section {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .automation-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .automation-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .integration-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .integration-card h4 {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .integration-card .status {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .automation-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Resume Upload Section */
+        .resume-section {
+            border-top: 2px solid #e2e8f0;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .file-upload {
+            border: 2px dashed #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #4c51bf;
+            background: #f8f9ff;
+        }
+
+        .file-upload.dragover {
+            border-color: #4c51bf;
+            background: #f0f4ff;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .resume-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .resume-uploaded {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .resume-not-uploaded {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #feb2b2;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4c51bf;
+        }
+
+        .keywords-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            min-height: 80px;
+        }
+
+        .keyword-tag {
+            background: #4c51bf;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .keyword-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .keyword-input {
+            border: none;
+            outline: none;
+            padding: 8px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #3182ce;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-automation {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-automation:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-section {
+            grid-column: 1 / -1;
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4c51bf, #667eea);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .job-item {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4c51bf;
+        }
+
+        .job-item h4 {
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .job-item .company {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .job-item .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .status-applied {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-processing {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-completed {
+            background: #bee3f8;
+            color: #2a4365;
+        }
+
+        .job-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .resume-info {
+            background: #e6fffa;
+            border: 1px solid #81e6d9;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .resume-content {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #10b981;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        .notification.info {
+            background: #3b82f6;
+        }
+
+        .telegram-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .telegram-banner h4 {
+            margin-bottom: 8px;
+        }
+
+        .telegram-banner p {
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .btn-setup-telegram {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-setup-telegram:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .oauth-buttons {
+                flex-direction: column;
+            }
+
+            .job-actions {
+                flex-direction: column;
+            }
+
+            .automation-status {
+                grid-template-columns: 1fr;
+            }
+
+            .automation-controls {
+                flex-direction: column;
+            }
+
+            .setup-buttons {
+                flex-direction: column;
+            }
+
+            .telegram-setup-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Job Agent AI</h1>
+            <p>Automated job applications with AI-powered resume customization, Google Drive storage, and Telegram notifications</p>
+        </div>
+
+        <!-- Authentication & Resume Section -->
+        <div class="auth-section">
+            <h3 class="auth-title">Connect Your Accounts</h3>
+            <div class="oauth-buttons">
+                <a href="http://localhost:3001/api/auth/linkedin" class="oauth-btn linkedin-btn">
+                    LinkedIn
+                    <span class="status-indicator disconnected" id="linkedin-status"></span>
+                </a>
+                <a href="http://localhost:3001/api/auth/google" class="oauth-btn google-btn">
+                    Google Drive
+                    <span class="status-indicator disconnected" id="google-status"></span>
+                </a>
+            </div>
+
+            <!-- Telegram Setup Banner -->
+            <div class="telegram-banner" id="telegram-banner" style="display: none;">
+                <h4>📱 Setup Telegram Notifications</h4>
+                <p>Get instant notifications when jobs are applied to automatically!</p>
+                <button class="btn-setup-telegram" onclick="showTelegramSetup()">
+                    Setup Telegram Notifications
+                </button>
+            </div>
+
+            <!-- Resume Upload Section -->
+            <div class="resume-section">
+                <h4 style="margin-bottom: 15px; color: #2d3748;">Upload Your Resume</h4>
+                <div class="file-upload" id="file-upload" onclick="document.getElementById('resume-file').click()">
+                    <input type="file" id="resume-file" accept=".pdf,.doc,.docx,.txt">
+                    <div class="upload-icon">📄</div>
+                    <div><strong>Click to upload</strong> or drag and drop</div>
+                    <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                        Supports PDF, DOC, DOCX, and TXT files (max 5MB)
+                    </div>
+                </div>
+                <div class="resume-status resume-not-uploaded" id="resume-status">
+                    No resume uploaded. Upload your resume for better job matching.
+                </div>
+            </div>
+        </div>
+
+        <!-- Automation Status Section -->
+        <div class="automation-section">
+            <h3 class="automation-title">
+                🤖 Daily Automation (9 AM IST)
+            </h3>
+            <div class="automation-status">
+                <div class="integration-card">
+                    <h4>📱 Telegram Notifications</h4>
+                    <div class="status" id="telegram-status">Not configured</div>
+                </div>
+                <div class="integration-card">
+                    <h4>💾 Google Drive Storage</h4>
+                    <div class="status" id="drive-status">Not configured</div>
+                </div>
+                <div class="integration-card">
+                    <h4>🔍 Job Search</h4>
+                    <div class="status" id="automation-status">Ready when setup complete</div>
+                </div>
+                <div class="integration-card">
+                    <h4>📊 Statistics</h4>
+                    <div class="status" id="stats-display">No data yet</div>
+                </div>
+            </div>
+            <div class="automation-controls">
+                <button class="btn-automation" onclick="testTelegram()" id="test-telegram-btn">
+                    Test Telegram
+                </button>
+                <button class="btn-automation" onclick="testDrive()" id="test-drive-btn">
+                    Test Google Drive
+                </button>
+                <button class="btn-automation" onclick="triggerManualAutomation()" id="manual-automation-btn">
+                    Run Manual Test
+                </button>
+                <button class="btn-automation" onclick="checkAutomationStatus()" id="check-status-btn">
+                    Check Status
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Job Search Configuration -->
+            <div class="panel">
+                <h3>Job Search Configuration</h3>
+                <form id="job-search-form">
+                    <div class="form-group">
+                        <label>Keywords</label>
+                        <div class="keywords-input" id="keywords-container">
+                            <input type="text" class="keyword-input" placeholder="Add skills/keywords..."
+                                id="keyword-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="location" placeholder="e.g., San Francisco, CA" value="">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Experience Level</label>
+                        <select id="experience-level">
+                            <option value="entry-level">Entry Level</option>
+                            <option value="mid-level" selected>Mid Level</option>
+                            <option value="senior-level">Senior Level</option>
+                            <option value="executive">Executive</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Job Type</label>
+                        <select id="job-type">
+                            <option value="full-time" selected>Full Time</option>
+                            <option value="part-time">Part Time</option>
+                            <option value="contract">Contract</option>
+                            <option value="freelance">Freelance</option>
+                            <option value="internship">Internship</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="start-btn" disabled>
+                        Start Job Search
+                    </button>
+                </form>
+            </div>
+
+            <!-- Real-time Progress -->
+            <div class="panel">
+                <h3>Status & Progress</h3>
+                <div id="status-content">
+                    <p>Connect your accounts and upload your resume to start job automation.</p>
+                </div>
+                <button onclick="checkStatus()" class="btn-secondary" style="margin-top: 15px;">
+                    Refresh Status
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="panel progress-section" id="progress-section">
+            <h3>Job Processing Progress</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div id="progress-text">Preparing to search for jobs...</div>
+            <div id="jobs-list"></div>
+        </div>
+
+        <!-- Job History -->
+        <div class="panel" style="margin-top: 25px;">
+            <h3>Application History</h3>
+            <button onclick="loadJobHistory()" class="btn-secondary" style="margin-bottom: 15px;">
+                Refresh History
+            </button>
+            <div id="history-content">
+                <p style="text-align: center; color: #666; padding: 40px;">
+                    No applications yet. Start your first job search above!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Telegram Setup Modal -->
+    <div id="telegram-setup-modal" class="telegram-setup-modal">
+        <div class="telegram-setup-content">
+            <div class="telegram-setup-header">
+                <h2>📱 Setup Telegram Notifications</h2>
+                <p>Get instant updates for every job application</p>
+            </div>
+            <div class="telegram-setup-body" id="telegram-setup-body">
+                <!-- Content will be dynamically loaded -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Resume Preview Modal -->
+    <div id="resume-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Resume Preview</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="job-actions" style="margin-bottom: 15px;">
+                    <button class="btn-success" onclick="downloadCurrentResume()">
+                        Download Resume
+                    </button>
+                    <button class="btn-warning" onclick="copyResumeToClipboard()">
+                        Copy to Clipboard
+                    </button>
+                </div>
+                <div id="resume-content" class="resume-content">
+                    Loading resume content...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Global variables
+        let socket = null;
+        let userToken = null;
+        let keywords = ['typescript', 'react', 'node.js'];
+        let userStatus = null;
+        let currentResumeContent = '';
+        let currentJobId = '';
+        let automationData = null;
+        let telegramSetupStep = 1;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeApp();
+            setupEventListeners();
+            checkStatus();
+            loadJobHistory();
+            checkAutomationStatus();
+        });
+
+        function initializeApp() {
+            // Check for auth token from URL (OAuth redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if (token) {
+                userToken = token;
+                localStorage.setItem('jobAgentToken', token);
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                showNotification('Successfully connected!', 'success');
+            } else {
+                userToken = localStorage.getItem('jobAgentToken');
+            }
+
+            // Initialize Socket.IO if we have a token
+            if (userToken) {
+                initializeSocket();
+            }
+
+            // Update keywords display
+            updateKeywordsDisplay();
+        }
+
+        function setupEventListeners() {
+            // Keyword input handling
+            const keywordInput = document.getElementById('keyword-input');
+            keywordInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addKeyword(this.value.trim());
+                    this.value = '';
+                }
+            });
+
+            // Job search form
+            document.getElementById('job-search-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                startJobSearch();
+            });
+
+            // File upload handling
+            const fileInput = document.getElementById('resume-file');
+            const fileUpload = document.getElementById('file-upload');
+
+            fileInput.addEventListener('change', handleFileUpload);
+
+            // Drag and drop
+            fileUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUpload.classList.add('dragover');
+            });
+
+            fileUpload.addEventListener('dragleave', () => {
+                fileUpload.classList.remove('dragover');
+            });
+
+            fileUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUpload.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelection(files[0]);
+                }
+            });
+
+            // Modal handling
+            const modal = document.getElementById('resume-modal');
+            const closeBtn = document.querySelector('.close');
+
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+                
+                // Close telegram setup modal if clicking outside
+                const telegramModal = document.getElementById('telegram-setup-modal');
+                if (event.target == telegramModal) {
+                    telegramModal.style.display = 'none';
+                }
+            }
+        }
+
+        // === TELEGRAM SETUP FUNCTIONS ===
+
+        function showTelegramSetup() {
+            document.getElementById('telegram-setup-modal').style.display = 'block';
+            telegramSetupStep = 1;
+            loadTelegramSetupStep();
+        }
+
+        function loadTelegramSetupStep() {
+            const setupBody = document.getElementById('telegram-setup-body');
+            
+            if (telegramSetupStep === 1) {
+                setupBody.innerHTML = `
+                    <div class="setup-step">
+                        <h4>Step 1: Connect to Your Bot</h4>
+                        <ol>
+                            <li>Open Telegram and search for: <span class="code-snippet">@manav_job_bot</span></li>
+                            <li>Send the command: <span class="code-snippet">/start</span></li>
+                            <li>Send any message like: <span class="code-snippet">Hello!</span></li>
+                        </ol>
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
+                            This creates a connection between you and the bot so it can send you notifications.
+                        </p>
+                        <div class="setup-buttons">
+                            <button class="btn-manual-setup" onclick="nextTelegramStep()">
+                                Done - Next Step
+                            </button>
+                            <button class="btn-cancel" onclick="closeTelegramSetup()">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (telegramSetupStep === 2) {
+                setupBody.innerHTML = `
+                    <div class="setup-step">
+                        <h4>Step 2: Get Your Chat ID</h4>
+                        <p style="margin-bottom: 20px;">Choose your preferred method:</p>
+                        
+                        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #48bb78; margin-bottom: 10px;">✨ Automatic Detection (Recommended)</h4>
+                            <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                                We'll automatically find your chat ID from the messages you sent to the bot.
+                            </p>
+                            <button class="btn-auto-detect" onclick="autoDetectChatId()">
+                                🔍 Auto-Detect Chat ID
+                            </button>
+                        </div>
+                        
+                        <div style="background: #fef5e7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4 style="color: #d69e2e; margin-bottom: 10px;">📝 Manual Method</h4>
+                            <ol style="font-size: 0.9rem; margin-bottom: 15px;">
+                                <li>Search for <span class="code-snippet">@userinfobot</span> on Telegram</li>
+                                <li>Send <span class="code-snippet">/start</span> to it</li>
+                                <li>Copy the number it gives you and paste below</li>
+                            </ol>
+                            <div class="input-group">
+                                <label>Enter your Chat ID:</label>
+                                <input type="text" id="manual-chat-id" placeholder="e.g., 123456789" maxlength="15">
+                            </div>
+                            <button class="btn-manual-setup" onclick="setupManualChatId()">
+                                ✅ Setup with Manual ID
+                            </button>
+                        </div>
+                        
+                        <div class="setup-buttons">
+                            <button class="btn-cancel" onclick="prevTelegramStep()">
+                                ← Back
+                            </button>
+                            <button class="btn-cancel" onclick="closeTelegramSetup()">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (telegramSetupStep === 3) {
+                setupBody.innerHTML = `
+                    <div class="success-message">
+                        <div class="emoji">🎉</div>
+                        <h3>Telegram Setup Complete!</h3>
+                        <p>
+                            You'll now receive notifications for all job applications.<br>
+                            Check your Telegram for a welcome message!
+                        </p>
+                        <div style="margin-top: 30px;">
+                            <button class="btn-manual-setup" onclick="closeTelegramSetup()">
+                                Continue to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function nextTelegramStep() {
+            telegramSetupStep++;
+            loadTelegramSetupStep();
+        }
+
+        function prevTelegramStep() {
+            telegramSetupStep--;
+            loadTelegramSetupStep();
+        }
+
+        function closeTelegramSetup() {
+            document.getElementById('telegram-setup-modal').style.display = 'none';
+            checkStatus(); // Refresh status to update UI
+            checkAutomationStatus();
+        }
+
+        async function autoDetectChatId() {
+            if (!userToken || !userStatus?.email) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Detecting your chat ID...', 'info');
+                
+                const response = await fetch(`http://localhost:3001/api/telegram/detect-chat/${userStatus.email}`, {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.chatId) {
+                    // Automatically setup with detected chat ID
+                    await setupTelegramWithChatId(data.chatId);
+                } else {
+                    showNotification(data.message || 'Could not auto-detect. Please use manual method.', 'error');
+                }
+            } catch (error) {
+                showNotification('Auto-detect failed. Please use manual method.', 'error');
+            }
+        }
+
+        async function setupManualChatId() {
+            const chatId = document.getElementById('manual-chat-id').value.trim();
+            
+            if (!chatId || !/^\d+$/.test(chatId)) {
+                showNotification('Please enter a valid chat ID (numbers only)', 'error');
+                return;
+            }
+
+            await setupTelegramWithChatId(chatId);
+        }
+
+        async function setupTelegramWithChatId(chatId) {
+            if (!userToken) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Setting up Telegram...', 'info');
+                
+                const response = await fetch('http://localhost:3001/api/telegram/setup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`
+                    },
+                    body: JSON.stringify({ chatId })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Telegram setup successful! Check your messages.', 'success');
+                    telegramSetupStep = 3;
+                    loadTelegramSetupStep();
+                } else {
+                    showNotification(data.error || 'Setup failed. Please check your chat ID.', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error during setup', 'error');
+            }
+        }
+
+        // === AUTOMATION FUNCTIONS ===
+
+        async function testTelegram() {
+            if (!userToken) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Testing Telegram...', 'info');
+                
+                const response = await fetch('http://localhost:3001/api/telegram/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Telegram test successful! Check your messages.', 'success');
+                } else {
+                    showNotification('Telegram test failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error during Telegram test', 'error');
+            }
+        }
+
+        async function testDrive() {
+            if (!userToken) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Testing Google Drive...', 'info');
+                
+                const response = await fetch('http://localhost:3001/api/automation/test-drive', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userEmail: userStatus?.email || 'test@example.com' })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Google Drive test successful! Check your drive.', 'success');
+                    if (data.testFileLink) {
+                        console.log('Test file created:', data.testFileLink);
+                    }
+                } else {
+                    showNotification('Google Drive test failed: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error during Drive test', 'error');
+            }
+        }
+
+        async function triggerManualAutomation() {
+            if (!userToken || !userStatus?.email) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Starting manual automation test...', 'info');
+                
+                const response = await fetch('http://localhost:3001/api/automation/trigger-automation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userEmail: userStatus.email })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Manual automation started! Check progress below.', 'success');
+                } else {
+                    showNotification('Failed to start automation: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error during automation trigger', 'error');
+            }
+        }
+
+        async function checkAutomationStatus() {
+            if (!userToken || !userStatus?.email) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/automation/status/${userStatus.email}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    automationData = data;
+                    updateAutomationUI(data);
+                }
+            } catch (error) {
+                console.error('Error checking automation status:', error);
+            }
+        }
+
+        function updateAutomationUI(data) {
+            // Update Telegram status
+            const telegramStatus = document.getElementById('telegram-status');
+            if (data.integrations.telegram.configured && data.integrations.telegram.userConfigured) {
+                telegramStatus.textContent = '✅ Connected & Ready';
+                telegramStatus.style.color = '#10b981';
+            } else if (data.integrations.telegram.configured) {
+                telegramStatus.textContent = '⚠️ Bot ready, user not configured';
+                telegramStatus.style.color = '#f59e0b';
+            } else {
+                telegramStatus.textContent = '❌ Not configured';
+                telegramStatus.style.color = '#ef4444';
+            }
+
+            // Update Google Drive status
+            const driveStatus = document.getElementById('drive-status');
+            if (data.integrations.googleDrive.configured) {
+                driveStatus.textContent = '✅ Connected & Ready';
+                driveStatus.style.color = '#10b981';
+            } else {
+                driveStatus.textContent = '❌ Not connected';
+                driveStatus.style.color = '#ef4444';
+            }
+
+            // Update automation status
+            const automationStatusEl = document.getElementById('automation-status');
+            if (data.user.automationEnabled && data.user.hasLinkedInToken && data.user.hasGoogleToken) {
+                automationStatusEl.textContent = '🤖 Active (Daily 9 AM IST)';
+                automationStatusEl.style.color = '#10b981';
+            } else {
+                automationStatusEl.textContent = '⏸️ Disabled - Complete setup';
+                automationStatusEl.style.color = '#f59e0b';
+            }
+
+            // Update stats
+            const statsDisplay = document.getElementById('stats-display');
+            if (data.applicationStats) {
+                statsDisplay.innerHTML = `
+                    Total: ${data.applicationStats.total || 0}<br>
+                    This week: ${data.applicationStats.thisWeek || 0}
+                `;
+            } else {
+                statsDisplay.textContent = 'No data yet';
+            }
+        }
+
+        // === FILE UPLOAD FUNCTIONS ===
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileSelection(file);
+            }
+        }
+
+        function handleFileSelection(file) {
+            // Validate file type
+            const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+            const fileName = file.name.toLowerCase();
+            const isValidType = allowedTypes.some(type => fileName.endsWith(type));
+
+            if (!isValidType) {
+                showNotification('Please upload a PDF, DOC, DOCX, or TXT file', 'error');
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('File size must be less than 5MB', 'error');
+                return;
+            }
+
+            uploadResume(file);
+        }
+
+        async function uploadResume(file) {
+            console.log('DEBUG: uploadResume called with file:', file.name, file.size);
+
+            if (!userToken) {
+                console.log('DEBUG: No user token found');
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('resume', file);
+
+            try {
+                showNotification('Uploading resume...', 'info');
+
+                const response = await fetch('http://localhost:3001/api/user/resume', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    },
+                    body: formData
+                });
+
+                console.log('DEBUG: Response status:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('DEBUG: Upload successful, response data:', data);
+                    
+                    // Show success notification with more details
+                    if (data.textExtracted) {
+                        showNotification(`Resume uploaded and text extracted: ${data.filename}`, 'success');
+                    } else {
+                        showNotification(`Resume uploaded: ${data.filename} (${data.extractionMethod})`, 'success');
+                    }
+                    
+                    // Immediately update resume status
+                    updateResumeStatus(true, data.filename);
+                    
+                    // Force refresh status after a short delay
+                    setTimeout(async () => {
+                        console.log('DEBUG: Force refreshing status...');
+                        await checkStatus();
+                        await checkAutomationStatus();
+                        
+                        // Double-check that status was updated
+                        setTimeout(() => {
+                            if (userStatus && userStatus.resumeUploaded) {
+                                console.log('DEBUG: Status correctly updated - resume uploaded');
+                            } else {
+                                console.log('DEBUG: Status not updated, forcing manual update');
+                                updateResumeStatus(true, data.filename);
+                                // Manually enable the start button if all requirements are met
+                                if (userStatus && userStatus.linkedinConnected && userStatus.googleConnected) {
+                                    document.getElementById('start-btn').disabled = false;
+                                }
+                            }
+                        }, 1000);
+                    }, 500);
+                    
+                } else {
+                    const error = await response.json();
+                    console.log('DEBUG: Upload failed, error:', error);
+                    showNotification(error.error || 'Failed to upload resume', 'error');
+                }
+            } catch (error) {
+                console.error('DEBUG: Network error during upload:', error);
+                showNotification('Network error occurred', 'error');
+            }
+        }
+
+        function updateResumeStatus(uploaded, filename = '') {
+            const statusElement = document.getElementById('resume-status');
+            if (uploaded) {
+                statusElement.className = 'resume-status resume-uploaded';
+                statusElement.textContent = `Resume uploaded: ${filename}`;
+            } else {
+                statusElement.className = 'resume-status resume-not-uploaded';
+                statusElement.textContent = 'No resume uploaded. Upload your resume for better job matching.';
+            }
+        }
+
+        // === KEYWORD MANAGEMENT ===
+
+        function addKeyword(keyword) {
+            if (keyword && !keywords.includes(keyword)) {
+                keywords.push(keyword);
+                updateKeywordsDisplay();
+            }
+        }
+
+        function removeKeyword(keyword) {
+            keywords = keywords.filter(k => k !== keyword);
+            updateKeywordsDisplay();
+        }
+
+        function updateKeywordsDisplay() {
+            const container = document.getElementById('keywords-container');
+            const input = document.getElementById('keyword-input');
+
+            // Clear existing tags
+            const existingTags = container.querySelectorAll('.keyword-tag');
+            existingTags.forEach(tag => tag.remove());
+
+            // Add keyword tags
+            keywords.forEach(keyword => {
+                const tag = document.createElement('div');
+                tag.className = 'keyword-tag';
+                tag.innerHTML = `
+                    ${keyword}
+                    <span class="remove" onclick="removeKeyword('${keyword}')">&times;</span>
+                `;
+                container.insertBefore(tag, input);
+            });
+        }
+
+        // === SOCKET.IO INITIALIZATION ===
+
+        function initializeSocket() {
+            console.log('DEBUG: Initializing socket with token:', userToken ? 'exists' : 'missing');
+
+            socket = io('http://localhost:3001', {
+                auth: { token: userToken }
+            });
+
+            socket.on('connect', () => {
+                console.log('DEBUG: Socket connected, sending authenticate event');
+                socket.emit('authenticate', userToken);
+            });
+
+            socket.on('authenticated', (data) => {
+                console.log('DEBUG: Socket authentication response:', data);
+                if (data.status === 'success') {
+                    console.log('Socket authenticated successfully');
+                } else {
+                    console.error('Socket authentication failed:', data.message);
+                    showNotification('Authentication failed', 'error');
+                }
+            });
+
+            // Job search events
+            socket.on('job_search_started', (data) => {
+                showProgressSection();
+                updateProgress(0, data.message);
+            });
+
+            socket.on('jobs_found', (data) => {
+                updateProgress(20, `Found ${data.count} matching jobs`);
+            });
+
+            socket.on('processing_job', (data) => {
+                updateProgress(data.progress, `Processing: ${data.title} at ${data.company}`);
+            });
+
+            socket.on('job_processed', (data) => {
+                addJobToList(data);
+                showNotification(`Applied to ${data.title} at ${data.company}`, 'success');
+                
+                // Show additional info about AI customization and Drive link
+                if (data.resumeCustomized) {
+                    setTimeout(() => {
+                        showNotification(`Resume AI-customized (${data.matchScore}% match)`, 'info');
+                    }, 1000);
+                }
+                
+                if (data.driveLink) {
+                    setTimeout(() => {
+                        showNotification('Resume saved to Google Drive', 'success');
+                    }, 2000);
+                }
+            });
+
+            socket.on('job_search_completed', (data) => {
+                updateProgress(100, `Completed! ${data.applications} applications processed`);
+                if (data.customizedResumes) {
+                    setTimeout(() => {
+                        showNotification(`${data.customizedResumes} resumes AI-customized`, 'info');
+                    }, 1000);
+                }
+                document.getElementById('start-btn').disabled = false;
+                setTimeout(() => {
+                    hideProgressSection();
+                    loadJobHistory();
+                    checkAutomationStatus(); // Refresh automation status
+                }, 3000);
+            });
+
+            socket.on('job_search_error', (data) => {
+                updateProgress(0, `Error: ${data.error}`);
+                document.getElementById('start-btn').disabled = false;
+                showNotification(data.error, 'error');
+            });
+        }
+
+        // === STATUS MANAGEMENT ===
+
+        async function checkStatus() {
+            console.log('DEBUG: checkStatus called, userToken:', userToken ? 'exists' : 'missing');
+
+            if (!userToken) return;
+
+            try {
+                const response = await fetch('http://localhost:3001/api/user/status', {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                console.log('DEBUG: Status response:', response.status, response.ok);
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    console.log('DEBUG: Status data received:', userData);
+                    
+                    // Store previous status for comparison
+                    const previousResumeStatus = userStatus ? userStatus.resumeUploaded : false;
+                    
+                    updateUserStatus(userData);
+                    
+                    // If resume status changed from false to true, show confirmation
+                    if (!previousResumeStatus && userData.resumeUploaded) {
+                        console.log('DEBUG: Resume status changed to uploaded');
+                        showNotification('Resume status updated - ready for job search!', 'success');
+                    }
+                    
+                    // Check automation status after getting user data
+                    if (userData.email) {
+                        setTimeout(checkAutomationStatus, 500);
+                    }
+                } else {
+                    console.log('DEBUG: Status check failed');
+                    localStorage.removeItem('jobAgentToken');
+                    userToken = null;
+                    updateUserStatus(null);
+                }
+            } catch (error) {
+                console.error('DEBUG: Error checking status:', error);
+            }
+        }
+
+        function updateUserStatus(userData) {
+            if (!userData) {
+                document.getElementById('status-content').innerHTML = '<p>Please connect your accounts to get started.</p>';
+                return;
+            }
+
+            userStatus = userData;
+
+            // Update connection indicators
+            const linkedinStatus = document.getElementById('linkedin-status');
+            const googleStatus = document.getElementById('google-status');
+
+            linkedinStatus.className = `status-indicator ${userData.linkedinConnected ? 'connected' : 'disconnected'}`;
+            googleStatus.className = `status-indicator ${userData.googleConnected ? 'connected' : 'disconnected'}`;
+
+            // Update resume status
+            updateResumeStatus(userData.resumeUploaded);
+
+            // Show/hide Telegram setup banner
+            const telegramBanner = document.getElementById('telegram-banner');
+            if (userData.linkedinConnected && userData.googleConnected && !userData.telegramConfigured) {
+                telegramBanner.style.display = 'block';
+            } else {
+                telegramBanner.style.display = 'none';
+            }
+
+            // Update status content
+            const statusContent = document.getElementById('status-content');
+            const allReady = userData.linkedinConnected && userData.googleConnected && userData.resumeUploaded;
+
+            if (allReady) {
+                statusContent.innerHTML = `
+                    <div style="color: #10b981; font-weight: 500; margin-bottom: 10px;">✅ Ready for job automation</div>
+                    <div>User: ${userData.name}</div>
+                    <div>Total Applications: ${userData.stats?.totalApplications || 0}</div>
+                    <div>Resume: ${userData.resumeUploaded ? '✅ Uploaded' : '❌ Missing'}</div>
+                    <div>Telegram: ${userData.telegramConfigured ? '✅ Configured' : '❌ Not setup'}</div>
+                    <div style="margin-top: 10px; padding: 8px; background: #e6fffa; border-radius: 6px; font-size: 0.9rem;">
+                        🤖 Daily automation will run at 9 AM IST
+                    </div>
+                `;
+                document.getElementById('start-btn').disabled = false;
+            } else {
+                statusContent.innerHTML = `
+                    <div style="color: #ef4444; margin-bottom: 10px;">Complete setup to enable automation</div>
+                    <div>LinkedIn: ${userData.linkedinConnected ? '✅' : '❌'}</div>
+                    <div>Google Drive: ${userData.googleConnected ? '✅' : '❌'}</div>
+                    <div>Resume: ${userData.resumeUploaded ? '✅' : '❌'}</div>
+                    <div>Telegram: ${userData.telegramConfigured ? '✅' : '❌'}</div>
+                `;
+                document.getElementById('start-btn').disabled = true;
+            }
+        }
+
+        // === JOB SEARCH FUNCTIONS ===
+
+        async function startJobSearch() {
+            console.log('DEBUG: startJobSearch called');
+            console.log('DEBUG: userToken exists:', !!userToken);
+            console.log('DEBUG: userStatus:', userStatus);
+
+            if (!userToken || !userStatus) {
+                showNotification('Please complete setup first', 'error');
+                return;
+            }
+
+            const formData = {
+                keywords: keywords,
+                location: document.getElementById('location').value,
+                experienceLevel: document.getElementById('experience-level').value,
+                jobType: document.getElementById('job-type').value
+            };
+
+            console.log('DEBUG: Sending job search data:', formData);
+
+            try {
+                document.getElementById('start-btn').disabled = true;
+
+                const response = await fetch('http://localhost:3001/api/jobs/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                console.log('DEBUG: Job search response status:', response.status);
+                console.log('DEBUG: Job search response ok:', response.ok);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('DEBUG: Job search success data:', data);
+                    showNotification('Job search started!', 'success');
+                } else {
+                    const error = await response.json();
+                    console.log('DEBUG: Job search error response:', error);
+                    showNotification(error.error || 'Failed to start job search', 'error');
+                    document.getElementById('start-btn').disabled = false;
+                }
+            } catch (error) {
+                console.error('DEBUG: Job search network error:', error);
+                showNotification('Network error occurred', 'error');
+                document.getElementById('start-btn').disabled = false;
+            }
+        }
+
+        // === PROGRESS FUNCTIONS ===
+
+        function showProgressSection() {
+            document.getElementById('progress-section').classList.add('active');
+            document.getElementById('jobs-list').innerHTML = '';
+        }
+
+        function hideProgressSection() {
+            document.getElementById('progress-section').classList.remove('active');
+        }
+
+        function updateProgress(percentage, text) {
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+            document.getElementById('progress-text').textContent = text;
+        }
+
+        function addJobToList(jobData) {
+            const jobsList = document.getElementById('jobs-list');
+            const jobItem = document.createElement('div');
+            jobItem.className = 'job-item';
+            jobItem.innerHTML = `
+                <h4>${jobData.title}</h4>
+                <div class="company">${jobData.company}</div>
+                <div class="status status-applied">${jobData.status}</div>
+                ${jobData.matchScore ? `<div style="margin-top: 5px; font-size: 0.9rem;">Match: ${jobData.matchScore}%</div>` : ''}
+                ${jobData.resumeCustomized ? '<div style="color: #10b981; font-size: 0.8rem;">🤖 AI Customized</div>' : ''}
+                ${jobData.driveLink ? '<div style="color: #3182ce; font-size: 0.8rem;">💾 Saved to Drive</div>' : ''}
+            `;
+            jobsList.appendChild(jobItem);
+        }
+
+        // === JOB HISTORY FUNCTIONS ===
+
+        async function loadJobHistory() {
+            if (!userToken) return;
+
+            try {
+                const response = await fetch('http://localhost:3001/api/jobs/history', {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateHistoryContent(data.applications);
+                }
+            } catch (error) {
+                console.error('Error loading job history:', error);
+            }
+        }
+
+        function updateHistoryContent(applications) {
+            const historyContent = document.getElementById('history-content');
+
+            if (applications.length === 0) {
+                historyContent.innerHTML = `
+                    <p style="text-align: center; color: #666; padding: 40px;">
+                        No applications yet. Start your first job search above!</p>
+                `;
+                return;
+            }
+
+            historyContent.innerHTML = `
+                <div style="display: grid; gap: 15px;">
+                    ${applications.map(app => `
+                        <div class="job-item">
+                            <h4>${app.jobListing?.title || app.title || 'Position'}</h4>
+                            <div class="company">${app.jobListing?.company || app.company || 'Company'}</div>
+                            <div class="status status-${(app.status || 'applied').toLowerCase()}">${app.status || 'Applied'}</div>
+                            <div style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                                Applied: ${new Date(app.appliedAt || app.applied_at || app.createdAt).toLocaleDateString()}
+                                ${app.matchScore ? ` | Match: ${app.matchScore}%` : ''}
+                            </div>
+                            <div class="resume-info">
+                                Resume: ${app.resumeCustomized ? '🤖 AI Customized' : '📄 Original'} 
+                                ${app.driveLink ? '| 💾 Saved to Drive' : ''}
+                            </div>
+                            <div class="job-actions">
+                                <button class="btn-secondary" onclick="viewJobDetails('${app.id}')" style="padding: 6px 12px; font-size: 0.8rem;">
+                                    View Details
+                                </button>
+                                <button class="btn-success" onclick="previewResume('${app.id}')" style="padding: 6px 12px; font-size: 0.8rem;">
+                                    ${app.resumeCustomized ? 'Preview AI Resume' : 'Preview Resume'}
+                                </button>
+                                <button class="btn-warning" onclick="downloadResume('${app.id}')" style="padding: 6px 12px; font-size: 0.8rem;">
+                                    Download Resume
+                                </button>
+                                ${app.driveLink ? `<button class="btn-secondary" onclick="openDriveLink('${app.driveLink}')" style="padding: 6px 12px; font-size: 0.8rem;">Open in Drive</button>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // === UTILITY FUNCTIONS ===
+
+        function openDriveLink(link) {
+            if (link) {
+                window.open(link, '_blank');
+                showNotification('Opening Google Drive link', 'info');
+            } else {
+                showNotification('No Drive link available', 'error');
+            }
+        }
+
+        async function viewJobDetails(jobId) {
+            showNotification('Job details feature - coming soon!', 'info');
+        }
+
+        async function previewResume(jobId) {
+            if (!userToken) return;
+
+            try {
+                showNotification('Loading resume...', 'info');
+                
+                const response = await fetch(`http://localhost:3001/api/jobs/${jobId}/resume`, {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentResumeContent = data.customizedContent || data.content;
+                    currentJobId = jobId;
+                    
+                    document.getElementById('modal-title').textContent = 
+                        `Resume for ${data.title || 'Position'} at ${data.company || 'Company'}`;
+                    document.getElementById('resume-content').textContent = currentResumeContent;
+                    document.getElementById('resume-modal').style.display = 'block';
+                } else {
+                    showNotification('Failed to load resume', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading resume:', error);
+                showNotification('Network error', 'error');
+            }
+        }
+
+        async function downloadResume(jobId) {
+            if (!userToken) return;
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/jobs/${jobId}/resume`, {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const resumeContent = data.customizedContent || data.content;
+                    const filename = data.resume_customized ? 
+                        `customized_resume_${data.company || 'job'}_${jobId}.txt` : 
+                        `original_resume_${jobId}.txt`;
+                    
+                    const blob = new Blob([resumeContent], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    showNotification(`Downloaded: ${filename}`, 'success');
+                } else {
+                    showNotification('Failed to download resume', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error', 'error');
+            }
+        }
+
+        function downloadCurrentResume() {
+            if (!currentResumeContent) {
+                showNotification('No resume content available', 'error');
+                return;
+            }
+
+            const filename = `resume_${currentJobId}_${new Date().toISOString().split('T')[0]}.txt`;
+            const blob = new Blob([currentResumeContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification(`Downloaded: ${filename}`, 'success');
+        }
+
+        function copyResumeToClipboard() {
+            if (!currentResumeContent) {
+                showNotification('No resume content available', 'error');
+                return;
+            }
+
+            navigator.clipboard.writeText(currentResumeContent).then(() => {
+                showNotification('Resume copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showNotification('Failed to copy to clipboard', 'error');
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+    </script>
+</body>
+
+</html>
