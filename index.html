@@ -956,7 +956,7 @@
                 <p>Get instant updates for every job application</p>
             </div>
             <div class="telegram-setup-body" id="telegram-setup-body">
-                </div>
+            </div>
         </div>
     </div>
 
@@ -983,6 +983,15 @@
     </div>
 
     <div class="notification" id="notification"></div>
+    <footer style="text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee;">
+        <p>
+            <a href="/privacy.html" style="margin-right: 20px;">Privacy Policy</a>
+            <a href="/terms.html">Terms of Service</a>
+        </p>
+        <p style="color: #666; font-size: 0.9rem;">
+            © 2025 Job Agent AI. All rights reserved.
+        </p>
+    </footer>
 
     <script>
         // Global variables
@@ -1372,7 +1381,7 @@
 
             try {
                 const response = await fetch(`http://localhost:3001/api/automation/status/${userStatus.email}`, {
-                     headers: { 'Authorization': `Bearer ${userToken}` }
+                    headers: { 'Authorization': `Bearer ${userToken}` }
                 });
 
                 if (response.ok) {
@@ -1488,7 +1497,7 @@
                     } else {
                         showNotification(`Resume uploaded: ${data.filename} (${data.extractionMethod})`, 'success');
                     }
-                    
+
                     setTimeout(checkStatus, 500);
 
                 } else {
@@ -1659,7 +1668,7 @@
             // Update status content and enable start button
             const allReady = userData.linkedinConnected && userData.googleConnected && userData.resumeUploaded;
             const statusContent = document.getElementById('status-content');
-            
+
             if (allReady) {
                 statusContent.innerHTML = `
                     <div style="color: #10b981; font-weight: 500; margin-bottom: 10px;">✅ Ready for job automation</div>
@@ -1873,4 +1882,5 @@
         }
     </script>
 </body>
+
 </html>
