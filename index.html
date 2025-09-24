@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Agent AI - Automated Job Applications</title>
+    <title>Job Agent AI - Daily Job Recommendations</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <style>
         * {
@@ -117,6 +117,137 @@
 
         .disconnected {
             background: #ef4444;
+        }
+
+        /* CSV Export Section */
+        .csv-export-section {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .csv-export-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .csv-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .csv-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .csv-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .csv-card h4 {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .csv-card .description {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .application-stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Enhanced Job History */
+        .job-status-applied {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .job-status-pending {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .job-status-manual_action_required {
+            background: #fef5e7;
+            color: #744210;
+        }
+
+        .job-status-form_ready_for_submit {
+            background: #e6fffa;
+            color: #234e52;
+        }
+
+        .job-status-suggestion_ready {
+            background: #e6fffa;
+            color: #234e52;
+        }
+
+        .job-status-analyzed {
+            background: #e1f5fe;
+            color: #0277bd;
+        }
+
+        .suggestions-count {
+            background: #f3e5f5;
+            border: 1px solid #ce93d8;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #4a148c;
+        }
+
+        .action-required {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #742a2a;
         }
 
         /* Telegram Setup Modal */
@@ -556,6 +687,24 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        .btn-csv {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+        }
+
+        .btn-csv:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         .progress-section {
             grid-column: 1 / -1;
             display: none;
@@ -785,6 +934,14 @@
                 width: 95%;
                 margin: 5% auto;
             }
+
+            .csv-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
@@ -793,8 +950,7 @@
     <div class="container">
         <div class="header">
             <h1>Job Agent AI</h1>
-            <p>Automated job applications with AI-powered resume customization, Google Drive storage, and Telegram
-                notifications</p>
+            <p>Daily job recommendations with AI-powered suggestions, beautiful reports, and Telegram notifications</p>
         </div>
 
         <div class="auth-section">
@@ -811,8 +967,8 @@
             </div>
 
             <div class="telegram-banner" id="telegram-banner" style="display: none;">
-                <h4>📱 Setup Telegram Notifications</h4>
-                <p>Get instant notifications when jobs are applied to automatically!</p>
+                <h4>Setup Telegram Notifications</h4>
+                <p>Get instant notifications for daily job recommendations!</p>
                 <button class="btn-setup-telegram" onclick="showTelegramSetup()">
                     Setup Telegram Notifications
                 </button>
@@ -834,25 +990,46 @@
             </div>
         </div>
 
+        <div class="csv-export-section">
+            <h3 class="csv-export-title">
+                📊 Export & Analytics
+            </h3>
+            <div class="csv-buttons">
+                <div class="csv-card" onclick="downloadApplicationsCSV()">
+                    <h4>📋 My Job Analysis</h4>
+                    <div class="description">Download all analyzed jobs with match scores and suggestions</div>
+                    <button class="btn-csv">Download Analysis CSV</button>
+                </div>
+                <div class="csv-card" onclick="downloadAvailableJobsCSV()">
+                    <h4>🔍 Job Suggestions</h4>
+                    <div class="description">Export current job recommendations with AI insights</div>
+                    <button class="btn-csv">Download Suggestions CSV</button>
+                </div>
+                <div class="csv-card" onclick="getJobSummary()">
+                    <h4>📈 Job Summary</h4>
+                    <div class="description">View detailed analysis statistics and trends</div>
+                    <button class="btn-csv">View Summary</button>
+                </div>
+            </div>
+            <div class="application-stats" id="application-stats" style="display: none;">
+                <h4>Analysis Statistics</h4>
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Stats will be populated here -->
+                </div>
+            </div>
+        </div>
+
         <div class="automation-section">
             <h3 class="automation-title">
-                🤖 Daily Automation (9 AM IST)
+                Daily Job Recommendations (9 AM IST)
             </h3>
             <div class="automation-status">
                 <div class="integration-card">
-                    <h4>📱 Telegram Notifications</h4>
-                    <div class="status" id="telegram-status">Not configured</div>
-                </div>
-                <div class="integration-card">
-                    <h4>💾 Google Drive Storage</h4>
-                    <div class="status" id="drive-status">Not configured</div>
-                </div>
-                <div class="integration-card">
-                    <h4>🔍 Job Search</h4>
+                    <h4>Job Analysis</h4>
                     <div class="status" id="automation-status">Ready when setup complete</div>
                 </div>
                 <div class="integration-card">
-                    <h4>📊 Statistics</h4>
+                    <h4>Statistics</h4>
                     <div class="status" id="stats-display">No data yet</div>
                 </div>
             </div>
@@ -886,7 +1063,7 @@
 
                     <div class="form-group">
                         <label>Location</label>
-                        <input type="text" id="location" placeholder="e.g., San Francisco, CA" value="">
+                        <input type="text" id="location" placeholder="e.g., UK, India, Remote" value="">
                     </div>
 
                     <div class="form-group">
@@ -911,7 +1088,7 @@
                     </div>
 
                     <button type="submit" class="btn-primary" id="start-btn" disabled>
-                        Start Job Search
+                        Get Job Suggestions
                     </button>
                 </form>
             </div>
@@ -919,7 +1096,7 @@
             <div class="panel">
                 <h3>Status & Progress</h3>
                 <div id="status-content">
-                    <p>Connect your accounts and upload your resume to start job automation.</p>
+                    <p>Connect your accounts and upload your resume to get personalized job suggestions.</p>
                 </div>
                 <button onclick="checkStatus()" class="btn-secondary" style="margin-top: 15px;">
                     Refresh Status
@@ -927,8 +1104,23 @@
             </div>
         </div>
 
+        <div class="panel" style="margin-top: 25px;">
+            <h3>Job Suggestions</h3>
+            <div id="suggestions-content">
+                <p>Get personalized job recommendations with AI-powered suggestions.</p>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="checkStatus()" class="btn-secondary">
+                    Refresh Status
+                </button>
+                <button onclick="generateSuggestionsDoc()" class="btn-success" id="generate-doc-btn">
+                    Generate Report
+                </button>
+            </div>
+        </div>
+
         <div class="panel progress-section" id="progress-section">
-            <h3>Job Processing Progress</h3>
+            <h3>Job Analysis Progress</h3>
             <div class="progress-bar">
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
@@ -937,13 +1129,18 @@
         </div>
 
         <div class="panel" style="margin-top: 25px;">
-            <h3>Application History</h3>
-            <button onclick="loadJobHistory()" class="btn-secondary" style="margin-bottom: 15px;">
-                Refresh History
-            </button>
+            <h3>Job Analysis History</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button onclick="loadJobHistory()" class="btn-secondary">
+                    Refresh History
+                </button>
+                <button onclick="downloadApplicationsCSV()" class="btn-success" style="font-size: 0.8rem;">
+                    Download CSV
+                </button>
+            </div>
             <div id="history-content">
                 <p style="text-align: center; color: #666; padding: 40px;">
-                    No applications yet. Start your first job search above!
+                    No job analysis yet. Start your first job search above!
                 </p>
             </div>
         </div>
@@ -952,8 +1149,8 @@
     <div id="telegram-setup-modal" class="telegram-setup-modal">
         <div class="telegram-setup-content">
             <div class="telegram-setup-header">
-                <h2>📱 Setup Telegram Notifications</h2>
-                <p>Get instant updates for every job application</p>
+                <h2>Setup Telegram Notifications</h2>
+                <p>Get instant updates for daily job recommendations</p>
             </div>
             <div class="telegram-setup-body" id="telegram-setup-body">
             </div>
@@ -983,18 +1180,18 @@
     </div>
 
     <div class="notification" id="notification"></div>
+
     <footer style="text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee;">
         <p>
             <a href="/privacy.html" style="margin-right: 20px;">Privacy Policy</a>
             <a href="/terms.html">Terms of Service</a>
         </p>
         <p style="color: #666; font-size: 0.9rem;">
-            © 2025 Job Agent AI. All rights reserved.
+            2025 Job Agent AI. All rights reserved.
         </p>
     </footer>
 
     <script>
-        // Global variables
         let socket = null;
         let userToken = null;
         let keywords = ['typescript', 'react', 'node.js'];
@@ -1100,6 +1297,164 @@
             }
         }
 
+        // === CSV EXPORT FUNCTIONS ===
+
+        async function downloadApplicationsCSV() {
+            if (!userToken) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Generating job analysis CSV...', 'info');
+
+                // FIX: Use the correct endpoint with type parameter
+                const response = await fetch('http://localhost:3001/api/jobs/export/csv?type=applied', {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `job_analysis_${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showNotification('Job analysis CSV downloaded!', 'success');
+                } else {
+                    // If the main endpoint fails, try the simple one
+                    await downloadSimpleCSV('applied');
+                }
+            } catch (error) {
+                console.error('Error downloading analysis CSV:', error);
+                // Fallback to simple download
+                await downloadSimpleCSV('applied');
+            }
+        }
+
+        async function downloadAvailableJobsCSV() {
+            if (!userToken) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Generating job suggestions CSV...', 'info');
+
+                // FIX: Use the correct endpoint with type parameter
+                const response = await fetch('http://localhost:3001/api/jobs/export/csv?type=available', {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `job_suggestions_${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showNotification('Job suggestions CSV downloaded!', 'success');
+                } else {
+                    // If the main endpoint fails, try the simple one
+                    await downloadSimpleCSV('available');
+                }
+            } catch (error) {
+                console.error('Error downloading CSV:', error);
+                // Fallback to simple download
+                await downloadSimpleCSV('available');
+            }
+        }
+
+        // Simple fallback CSV download
+        async function downloadSimpleCSV(type) {
+            try {
+                const response = await fetch(`http://localhost:3001/api/jobs/download-csv?type=${type}`, {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = type === 'applied'
+                        ? `job_applications_${new Date().toISOString().split('T')[0]}.csv`
+                        : `available_jobs_${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showNotification('CSV downloaded successfully!', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'Failed to export CSV', 'error');
+                }
+            } catch (error) {
+                console.error('Error downloading simple CSV:', error);
+                showNotification('Error downloading CSV', 'error');
+            }
+        }
+        async function getJobSummary() {
+            if (!userToken) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Loading job summary...', 'info');
+
+                const response = await fetch('http://localhost:3001/api/automation/status/${userStatus.email}', {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayJobSummary(data.applicationStats || {});
+                    showNotification('Job summary loaded!', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'Failed to load summary', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading job summary:', error);
+                showNotification('Error loading summary', 'error');
+            }
+        }
+
+        function displayJobSummary(data) {
+            const statsSection = document.getElementById('application-stats');
+            const statsGrid = document.getElementById('stats-grid');
+
+            statsGrid.innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-value">${data.total || 0}</span>
+                    <span class="stat-label">Jobs Analyzed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${data.thisWeek || 0}</span>
+                    <span class="stat-label">This Week</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${data.thisMonth || 0}</span>
+                    <span class="stat-label">This Month</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${data.averageMatchScore || 0}%</span>
+                    <span class="stat-label">Avg Match Score</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${data.customizedResumes || 0}</span>
+                    <span class="stat-label">AI Suggestions</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${data.recentApplications ? data.recentApplications.length : 0}</span>
+                    <span class="stat-label">Recent Jobs</span>
+                </div>
+            `;
+
+            statsSection.style.display = 'block';
+        }
+
         // === TELEGRAM SETUP FUNCTIONS ===
 
         function showTelegramSetup() {
@@ -1121,7 +1476,7 @@
                             <li>Send any message like: <span class="code-snippet">Hello!</span></li>
                         </ol>
                         <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
-                            This creates a connection between you and the bot so it can send you notifications.
+                            This creates a connection between you and the bot so it can send you daily job recommendations.
                         </p>
                         <div class="setup-buttons">
                             <button class="btn-manual-setup" onclick="nextTelegramStep()">
@@ -1145,12 +1500,12 @@
                                 We'll automatically find your chat ID from the messages you sent to the bot.
                             </p>
                             <button class="btn-auto-detect" onclick="autoDetectChatId()">
-                                🔍 Auto-Detect Chat ID
+                                Auto-Detect Chat ID
                             </button>
                         </div>
                         
                         <div style="background: #fef5e7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                            <h4 style="color: #d69e2e; margin-bottom: 10px;">📝 Manual Method</h4>
+                            <h4 style="color: #d69e2e; margin-bottom: 10px;">Manual Method</h4>
                             <ol style="font-size: 0.9rem; margin-bottom: 15px;">
                                 <li>Search for <span class="code-snippet">@userinfobot</span> on Telegram</li>
                                 <li>Send <span class="code-snippet">/start</span> to it</li>
@@ -1161,7 +1516,7 @@
                                 <input type="text" id="manual-chat-id" placeholder="e.g., 123456789" maxlength="15">
                             </div>
                             <button class="btn-manual-setup" onclick="setupManualChatId()">
-                                ✅ Setup with Manual ID
+                                Setup with Manual ID
                             </button>
                         </div>
                         
@@ -1178,10 +1533,10 @@
             } else if (telegramSetupStep === 3) {
                 setupBody.innerHTML = `
                     <div class="success-message">
-                        <div class="emoji">🎉</div>
+                        <div class="emoji">✅</div>
                         <h3>Telegram Setup Complete!</h3>
                         <p>
-                            You'll now receive notifications for all job applications.<br>
+                            You'll now receive daily job recommendations!<br>
                             Check your Telegram for a welcome message!
                         </p>
                         <div style="margin-top: 30px;">
@@ -1206,7 +1561,7 @@
 
         function closeTelegramSetup() {
             document.getElementById('telegram-setup-modal').style.display = 'none';
-            checkStatus(); // Refresh status to update UI
+            checkStatus();
             checkAutomationStatus();
         }
 
@@ -1228,7 +1583,6 @@
                 const data = await response.json();
 
                 if (data.success && data.chatId) {
-                    // Automatically setup with detected chat ID
                     await setupTelegramWithChatId(data.chatId);
                 } else {
                     showNotification(data.message || 'Could not auto-detect. Please use manual method.', 'error');
@@ -1326,7 +1680,8 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${userToken}`
-                    }
+                    },
+                    body: JSON.stringify({ userEmail: userStatus.email })
                 });
 
                 const data = await response.json();
@@ -1351,7 +1706,7 @@
             }
 
             try {
-                showNotification('Starting manual automation test...', 'info');
+                showNotification('Starting manual test...', 'info');
 
                 const response = await fetch('http://localhost:3001/api/automation/trigger-automation', {
                     method: 'POST',
@@ -1365,12 +1720,12 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showNotification('Manual automation started! Check progress below.', 'success');
+                    showNotification('Manual test started! Check progress below.', 'success');
                 } else {
-                    showNotification('Failed to start automation: ' + data.message, 'error');
+                    showNotification('Failed to start test: ' + data.message, 'error');
                 }
             } catch (error) {
-                showNotification('Network error during automation trigger', 'error');
+                showNotification('Network error during test trigger', 'error');
             }
         }
 
@@ -1398,33 +1753,33 @@
             // Update Telegram status
             const telegramStatus = document.getElementById('telegram-status');
             if (data.integrations.telegram.configured && data.integrations.telegram.userConfigured) {
-                telegramStatus.textContent = '✅ Connected & Ready';
+                telegramStatus.textContent = 'Connected & Ready';
                 telegramStatus.style.color = '#10b981';
             } else if (data.integrations.telegram.configured) {
-                telegramStatus.textContent = '⚠️ Bot ready, user not configured';
+                telegramStatus.textContent = 'Bot ready, user not configured';
                 telegramStatus.style.color = '#f59e0b';
             } else {
-                telegramStatus.textContent = '❌ Not configured';
+                telegramStatus.textContent = 'Not configured';
                 telegramStatus.style.color = '#ef4444';
             }
 
             // Update Google Drive status
             const driveStatus = document.getElementById('drive-status');
             if (data.integrations.googleDrive.configured) {
-                driveStatus.textContent = '✅ Connected & Ready';
+                driveStatus.textContent = 'Connected & Ready';
                 driveStatus.style.color = '#10b981';
             } else {
-                driveStatus.textContent = '❌ Not connected';
+                driveStatus.textContent = 'Not connected';
                 driveStatus.style.color = '#ef4444';
             }
 
             // Update automation status
             const automationStatusEl = document.getElementById('automation-status');
             if (data.user.automationEnabled && data.user.hasLinkedInToken && data.user.hasGoogleToken) {
-                automationStatusEl.textContent = '🤖 Active (Daily 9 AM IST)';
+                automationStatusEl.textContent = 'Active (Daily 9 AM IST)';
                 automationStatusEl.style.color = '#10b981';
             } else {
-                automationStatusEl.textContent = '⏸️ Disabled - Complete setup';
+                automationStatusEl.textContent = 'Disabled - Complete setup';
                 automationStatusEl.style.color = '#f59e0b';
             }
 
@@ -1579,26 +1934,20 @@
             });
 
             socket.on('jobs_found', (data) => {
-                updateProgress(20, `Found ${data.count} matching jobs`);
+                updateProgress(20, `Found ${data.count} job opportunities to analyze`);
             });
 
             socket.on('processing_job', (data) => {
-                updateProgress(data.progress, `Processing: ${data.title} at ${data.company}`);
+                updateProgress(data.progress, `Analyzing: ${data.title} at ${data.company}`);
             });
 
             socket.on('job_processed', (data) => {
                 addJobToList(data);
-                showNotification(`Applied to ${data.title} at ${data.company}`, 'success');
-
-                if (data.resumeCustomized) {
-                    setTimeout(() => {
-                        showNotification(`Resume AI-customized (${data.matchScore}% match)`, 'info');
-                    }, 1000);
-                }
+                showNotification(`Analyzed ${data.title} at ${data.company} - ${data.matchScore || 'N/A'}% match`, 'success');
             });
 
             socket.on('job_search_completed', (data) => {
-                updateProgress(100, `Completed! ${data.applications} applications processed`);
+                updateProgress(100, `Analysis complete! ${data.suggestions || 0} job suggestions ready`);
                 document.getElementById('start-btn').disabled = false;
                 setTimeout(() => {
                     hideProgressSection();
@@ -1612,6 +1961,48 @@
                 document.getElementById('start-btn').disabled = false;
                 showNotification(data.error, 'error');
             });
+        }
+
+        // === DOCUMENT GENERATION ===
+
+        async function generateSuggestionsDoc() {
+            if (!userToken) {
+                showNotification('Please connect your accounts first', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Generating suggestions document...', 'info');
+
+                const response = await fetch('http://localhost:3001/api/jobs/generate-suggestions-doc', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.driveLink) {
+                        showNotification('Suggestions document saved to Google Drive!', 'success');
+                        setTimeout(() => {
+                            const openDoc = confirm('Open the suggestions document in Google Drive?');
+                            if (openDoc) {
+                                window.open(data.driveLink, '_blank');
+                            }
+                        }, 1000);
+                    } else {
+                        showNotification('Suggestions document generated successfully!', 'success');
+                    }
+                } else {
+                    showNotification(data.error || 'Failed to generate document', 'error');
+                }
+            } catch (error) {
+                console.error('Error generating suggestions document:', error);
+                showNotification('Error generating document', 'error');
+            }
         }
 
         // === STATUS MANAGEMENT ===
@@ -1671,18 +2062,18 @@
 
             if (allReady) {
                 statusContent.innerHTML = `
-                    <div style="color: #10b981; font-weight: 500; margin-bottom: 10px;">✅ Ready for job automation</div>
+                    <div style="color: #10b981; font-weight: 500; margin-bottom: 10px;">Ready for job suggestions</div>
                     <div>User: ${userData.name}</div>
-                    <div>Resume: ${userData.resumeFilename ? `✅ ${userData.resumeFilename}` : '✅ Uploaded'}</div>
-                    <div>Telegram: ${userData.telegramConfigured ? '✅ Configured' : '❌ Not setup'}</div>
+                    <div>Resume: ${userData.resumeFilename ? `${userData.resumeFilename}` : 'Uploaded'}</div>
+                    <div>Telegram: ${userData.telegramConfigured ? 'Configured' : 'Not setup'}</div>
                 `;
                 document.getElementById('start-btn').disabled = false;
             } else {
                 statusContent.innerHTML = `
-                    <div style="color: #ef4444; margin-bottom: 10px;">Complete setup to enable automation</div>
-                    <div>LinkedIn: ${userData.linkedinConnected ? '✅' : '❌'}</div>
-                    <div>Google Drive: ${userData.googleConnected ? '✅' : '❌'}</div>
-                    <div>Resume: ${userData.resumeUploaded ? '✅' : '❌'}</div>
+                    <div style="color: #ef4444; margin-bottom: 10px;">Complete setup to enable job suggestions</div>
+                    <div>LinkedIn: ${userData.linkedinConnected ? 'Connected' : 'Not connected'}</div>
+                    <div>Google Drive: ${userData.googleConnected ? 'Connected' : 'Not connected'}</div>
+                    <div>Resume: ${userData.resumeUploaded ? 'Uploaded' : 'Not uploaded'}</div>
                 `;
                 document.getElementById('start-btn').disabled = true;
             }
@@ -1715,7 +2106,7 @@
                 });
 
                 if (response.ok) {
-                    showNotification('Job search started!', 'success');
+                    showNotification('Job analysis started! Finding the best opportunities...', 'success');
                 } else {
                     const error = await response.json();
                     showNotification(error.error || 'Failed to start job search', 'error');
@@ -1747,15 +2138,44 @@
             const jobsList = document.getElementById('jobs-list');
             const jobItem = document.createElement('div');
             jobItem.className = 'job-item';
+
+            const statusClass = 'job-status-analyzed';
+
             jobItem.innerHTML = `
                 <h4>${jobData.title}</h4>
                 <div class="company">${jobData.company}</div>
-                <div class="status status-applied">${jobData.status}</div>
-                ${jobData.matchScore ? `<div style="margin-top: 5px; font-size: 0.9rem;">Match: ${jobData.matchScore}%</div>` : ''}
-                ${jobData.resumeCustomized ? '<div style="color: #10b981; font-size: 0.8rem;">🤖 AI Customized</div>' : ''}
-                ${jobData.driveLink ? '<div style="color: #3182ce; font-size: 0.8rem;">💾 Saved to Drive</div>' : ''}
+                <div class="status ${statusClass}">${jobData.status || 'Analyzed'}</div>
+                ${jobData.matchScore ? `<div style="margin-top: 5px; font-size: 0.9rem;">Match Score: ${jobData.matchScore}%</div>` : ''}
+                ${jobData.suggestionsCount ? `<div class="suggestions-count">${jobData.suggestionsCount} AI suggestions generated</div>` : ''}
+                <div style="margin-top: 10px;">
+                    <button class="btn-secondary" onclick="window.open('${jobData.jobUrl || jobData.url || '#'}', '_blank')" style="font-size: 0.8rem;">
+                        View Job Details
+                    </button>
+                </div>
             `;
             jobsList.appendChild(jobItem);
+        }
+
+        function getStatusClass(status) {
+            if (!status) return 'status-processing';
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('applied')) return 'job-status-applied';
+            if (statusLower.includes('analyzed')) return 'job-status-analyzed';
+            if (statusLower.includes('manual') || statusLower.includes('action')) return 'job-status-manual_action_required';
+            if (statusLower.includes('form') || statusLower.includes('ready')) return 'job-status-form_ready_for_submit';
+            return 'job-status-pending';
+        }
+
+        function getActionRequired(status) {
+            if (!status) return null;
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('manual') || statusLower.includes('action')) {
+                return 'Visit job URL to apply manually';
+            }
+            if (statusLower.includes('form') || statusLower.includes('ready')) {
+                return 'LinkedIn form filled - click submit button';
+            }
+            return null;
         }
 
         // === JOB HISTORY FUNCTIONS ===
@@ -1783,35 +2203,42 @@
             const historyContent = document.getElementById('history-content');
 
             if (applications.length === 0) {
-                historyContent.innerHTML = `<p style="text-align: center; color: #666; padding: 40px;">No applications yet.</p>`;
+                historyContent.innerHTML = `<p style="text-align: center; color: #666; padding: 40px;">No job analysis yet. Start your first job search above!</p>`;
                 return;
             }
 
             historyContent.innerHTML = `<div style="display: grid; gap: 15px;">
-                ${applications.map(app => `
-                    <div class="job-item">
-                        <h4>${app.jobListing?.title || app.title || 'Position'}</h4>
-                        <div class="company">${app.jobListing?.company || app.company || 'Company'}</div>
-                        <div class="status status-${(app.status || 'applied').toLowerCase()}">${app.status || 'Applied'}</div>
-                        <div style="margin-top: 8px; font-size: 0.9rem; color: #666;">
-                            Applied: ${new Date(app.appliedAt || app.createdAt).toLocaleDateString()}
-                            ${app.matchScore ? ` | Match: ${app.matchScore}%` : ''}
+                ${applications.map(app => {
+                const statusClass = getStatusClass(app.status);
+                const actionRequired = getActionRequired(app.status);
+
+                return `
+                        <div class="job-item">
+                            <h4>${app.jobListing?.title || app.title || 'Position'}</h4>
+                            <div class="company">${app.jobListing?.company || app.company || 'Company'}</div>
+                            <div class="status ${statusClass}">${app.status || 'Analyzed'}</div>
+                            <div style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                                Analyzed: ${new Date(app.appliedAt || app.createdAt).toLocaleDateString()}
+                                ${app.matchScore ? ` | Match: ${app.matchScore}%` : ''}
+                            </div>
+                            ${actionRequired ? `<div class="action-required">Action Required: ${actionRequired}</div>` : ''}
+                            <div class="resume-info">
+                                Analysis: ${app.resumeCustomized ? 'AI Suggestions Generated' : 'Basic Analysis'} 
+                                ${app.driveLink ? '| Saved to Google Drive' : ''}
+                            </div>
+                            <div class="job-actions">
+                                <button class="btn-success" onclick="previewResume('${app.id}')">
+                                    View Suggestions
+                                </button>
+                                <button class="btn-warning" onclick="downloadResume('${app.id}')">
+                                    Download Report
+                                </button>
+                                ${app.jobUrl || app.jobListing?.url ? `<button class="btn-secondary" onclick="window.open('${app.jobUrl || app.jobListing?.url}', '_blank')">View Job</button>` : ''}
+                                ${app.driveLink ? `<button class="btn-secondary" onclick="window.open('${app.driveLink}', '_blank')">Open in Drive</button>` : ''}
+                            </div>
                         </div>
-                        <div class="resume-info">
-                            Resume: ${app.resumeCustomized ? '🤖 AI Customized' : '📄 Original'} 
-                            ${app.driveLink ? '| 💾 Saved to Drive' : ''}
-                        </div>
-                        <div class="job-actions">
-                            <button class="btn-success" onclick="previewResume('${app.id}')">
-                                Preview Resume
-                            </button>
-                            <button class="btn-warning" onclick="downloadResume('${app.id}')">
-                                Download Resume
-                            </button>
-                            ${app.driveLink ? `<button class="btn-secondary" onclick="openDriveLink('${app.driveLink}')">Open in Drive</button>` : ''}
-                        </div>
-                    </div>
-                `).join('')}
+                    `;
+            }).join('')}
             </div>`;
         }
 
@@ -1825,7 +2252,7 @@
             if (!userToken) return;
 
             try {
-                showNotification('Loading resume...', 'info');
+                showNotification('Loading suggestions...', 'info');
                 const response = await fetch(`http://localhost:3001/api/jobs/${jobId}/resume`, {
                     headers: { 'Authorization': `Bearer ${userToken}` }
                 });
@@ -1833,11 +2260,11 @@
                     const data = await response.json();
                     currentResumeContent = data.customizedContent || data.content;
                     currentJobId = jobId;
-                    document.getElementById('modal-title').textContent = `Resume for ${data.title || 'Position'}`;
+                    document.getElementById('modal-title').textContent = `Job Suggestions`;
                     document.getElementById('resume-content').textContent = currentResumeContent;
                     document.getElementById('resume-modal').style.display = 'block';
                 } else {
-                    showNotification('Failed to load resume', 'error');
+                    showNotification('Failed to load suggestions', 'error');
                 }
             } catch (error) {
                 showNotification('Network error', 'error');
@@ -1846,7 +2273,6 @@
 
         async function downloadResume(jobId) {
             if (!userToken) return;
-            // This can be a direct link now if the backend supports it, or fetch blob
             window.open(`http://localhost:3001/api/jobs/${jobId}/resume/download?token=${userToken}`, '_blank');
         }
 
@@ -1856,7 +2282,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `resume_${currentJobId}.txt`;
+            a.download = `job_suggestions_${currentJobId || 'current'}.txt`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -1864,7 +2290,7 @@
         function copyResumeToClipboard() {
             if (!currentResumeContent) return;
             navigator.clipboard.writeText(currentResumeContent).then(() => {
-                showNotification('Resume copied to clipboard!', 'success');
+                showNotification('Suggestions copied to clipboard!', 'success');
             }).catch(err => {
                 showNotification('Failed to copy', 'error');
             });
